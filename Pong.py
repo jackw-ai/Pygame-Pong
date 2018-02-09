@@ -10,11 +10,11 @@ from pygame.locals import *
 FPS = 200
 
 # Ball speed
-SPEED = 1
+SPEED = 5
 
 # Window dimensions
-WIN_W = 400
-WIN_H = 300
+WIN_W = 440
+WIN_H = 330
 
 # paddle and line dimensions
 LINE_WIDTH = 10
@@ -56,9 +56,9 @@ def move_ball(ball, dir_x, dir_y): # ball is a Pygame rect
 
 # makes the ball bounce at window boundaries
 def bounce(ball, dir_x, dir_y):
-    if (ball.top == LINE_WIDTH) or (ball.bottom == (WIN_H - LINE_WIDTH)):
+    if (ball.top <= LINE_WIDTH) or (ball.bottom >= (WIN_H - LINE_WIDTH)):
         dir_y *= -1 # change dir if hit upper or lower bound
-    if (ball.left == LINE_WIDTH) or (ball.right == WIN_W - LINE_WIDTH):
+    if (ball.left <= LINE_WIDTH) or (ball.right >= WIN_W - LINE_WIDTH):
         dir_x *= -1
     return dir_x, dir_y
 
@@ -88,16 +88,22 @@ def comp(ball, dir_x, paddle2):
 # update score
 def has_scored(paddle1, paddle2, ball, score1, score2, dir_x):
     if ball.left == LINE_WIDTH: # p1 lost, p2 scored
-        return score1, score2 + 5
+        ball.x = (WIN_W / 2) - (LINE_WIDTH / 2)
+        ball.y = (WIN_H / 2) - (LINE_WIDTH / 2)
+        dir_x = 1
+        return ball, dir_x, score1, score2 + 5
     # p1 touches ball, gains a pt
     elif (dir_x == -1) and (paddle1.right == ball.left) and (paddle1.top < ball.top) and (paddle1.bottom > ball.bottom):
-        return score1 + 1, score2
+        return ball, dir_x, score1 + 1, score2
     elif (dir_x == 1) and (paddle2.left == ball.right) and (paddle2.top < ball.top) and (paddle2.bottom > ball.bottom):
-        return score1, score2 + 1
+        return ball, dir_x, score1, score2 + 1
     elif (ball.right == WIN_W - LINE_WIDTH): # p1 scores! +5
-        return score1, score2 + 5
+        ball.x = (WIN_W / 2) - (LINE_WIDTH / 2)
+        ball.y = (WIN_H / 2) - (LINE_WIDTH / 2)
+        dir_x = -1
+        return ball, dir_x, score1 + 5, score2
     else: # nothing yet
-        return score1, score2 
+        return ball, dir_x, score1, score2 
 
 # displays score on board
 def print_score(score1, score2):
@@ -113,6 +119,13 @@ def print_score(score1, score2):
     resultRect2 = resultSurf2.get_rect()
     resultRect2.topleft = (WIN_W - 100, 25)
     DISPLAYSURF.blit(resultSurf2, resultRect2) 
+
+# determines if keyboard input is valid
+def keydown(event):
+    if event.key == K_DOWN or event.key == K_s:
+        return 8
+    elif event.key in (K_UP, K_w):
+        return -8
 
 # main method
 def main():
@@ -156,6 +169,8 @@ def main():
 
     pygame.mouse.set_visible(0) # cursor gone
 
+    key = 0 # determines keyboard input
+
     while True: # game loop
         for event in pygame.event.get():
             if event.type == QUIT: # quitting the game
@@ -164,7 +179,13 @@ def main():
             elif event.type == MOUSEMOTION: # mouse / touchpad controls p1
                 mouse_x, mouse_y = event.pos
                 paddle1.y = mouse_y
+            elif event.type == KEYDOWN: # pressed key 
+                key = keydown(event)
+            elif event.type == KEYUP: # lifted key
+                key = 0
         
+        paddle1.y += key
+
         # draw everything
         draw_board()
         place_paddle(paddle1)
@@ -175,7 +196,7 @@ def main():
         ball = move_ball(ball, dir_x, dir_y)
         
         # check score
-        p1_score, p2_score = has_scored(paddle1, paddle2, ball, p1_score, p2_score, dir_x)
+        ball, dir_x, p1_score, p2_score = has_scored(paddle1, paddle2, ball, p1_score, p2_score, dir_x)
 
         # check direction
         dir_x, dir_y = bounce(ball, dir_x, dir_y)        
