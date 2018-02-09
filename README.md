@@ -4,7 +4,8 @@ Pong written with the Pygame library. Includes AI opponent and touchpad/mouse co
 ## Installation
 This game requires Python3 and Pygame to launch.
 
-To install Pygame, type the following in terminal 
-'''sh
+To install Pygame, type the following terminal command.
+```sh
 python3 -m pip install pygame --user
-'''
+```
+
